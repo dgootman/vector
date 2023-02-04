@@ -1,0 +1,37 @@
+services:
+  geoipupdate:
+    image: maxmindinc/geoipupdate
+    container_name: geoipupdate
+    restart: unless-stopped
+    volumes:
+      - geoip:/usr/share/GeoIP
+    environment:
+      - GEOIPUPDATE_ACCOUNT_ID
+      - GEOIPUPDATE_LICENSE_KEY
+      - GEOIPUPDATE_EDITION_IDS=GeoLite2-City
+      - GEOIPUPDATE_FREQUENCY=24
+      - GEOIPUPDATE_PRESERVE_FILE_TIMES=1
+
+  vector:
+    image: timberio/vector:latest-alpine
+    container_name: vector
+    restart: unless-stopped
+    pid: host
+    network_mode: host
+    volumes:
+      - ./vector.yaml:/etc/vector/vector.yaml:ro
+      - geoip:/etc/vector/geoip:ro
+      - /:/hostfs:ro
+    environment:
+      - LOKI_ENDPOINT
+      - LOKI_USER
+      - LOKI_PASSWORD
+      - PROMETHEUS_ENDPOINT
+      - PROMETHEUS_USER
+      - PROMETHEUS_PASSWORD
+      - PROCFS_ROOT=/hostfs/proc
+      - SYSFS_ROOT=/hostfs/sys
+    command: [ "--config-yaml", "/etc/vector/vector.yaml" ]
+
+volumes:
+  geoip:

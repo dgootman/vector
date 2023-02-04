@@ -1,0 +1,98 @@
+enrichment_tables:
+  geoip_table:
+    type: geoip
+    path: /etc/vector/geoip/GeoLite2-City.mmdb
+
+sources:
+
+  traefik:
+    type: file
+    ignore_older_secs: 600
+    include:
+      - /hostfs/var/log/traefik/access.log
+    read_from: end
+
+  logs:
+    type: file
+    ignore_older_secs: 600
+    include:
+      - /hostfs/var/log/**/auth*.log
+      - /hostfs/var/log/**/sys*.log
+    read_from: end
+
+  host_metrics:
+    type: host_metrics
+    collectors: [
+      # "cgroups",
+      "cpu",
+      "disk",
+      "filesystem",
+      "load",
+      "host",
+      "memory",
+      "network"
+    ]
+    filesystem:
+      devices:
+        includes:
+          - /dev/*
+
+transforms:
+
+  traefik_parser:
+    type: remap
+    inputs:
+      - traefik
+    source: |-
+      . |= parse_regex!(.message, r'^(?P<source_addr>\S*) (?P<host>\S*) (?P<user>\S*) \[(?P<timestamp>[^\]]*)\] "(?P<method>\S+)(?: +(?P<path>[^"]*?)(?: +\S*)?)?" (?P<code>\S*) (?P<size>\S*)(?: "(?P<referer>[^"]*)" "(?P<agent>[^"]*)") (?P<count>\S*) "(?P<router>[^"]*)" "(?P<server>[^"]*)" (?P<duration>\d*)ms$')
+
+      # Coerce parsed fields
+      .timestamp = parse_timestamp(.timestamp, "%d/%b/%Y:%H:%M:%S %z") ?? now()
+
+      .geoip = get_enrichment_table_record!("geoip_table",
+        {
+          "ip": .source_addr
+        }
+      )
+
+  syslog:
+    type: remap
+    inputs:
+      - logs
+    source: |-
+      . |= parse_syslog!(.message)
+
+sinks:
+
+  # console:
+  #   type: console
+  #   inputs:
+  #     - "*"
+  #   encoding:
+  #     codec: json
+
+  loki:
+    type: loki
+    endpoint: "${LOKI_ENDPOINT?}"
+    auth:
+      strategy: basic
+      user: "${LOKI_USER?}"
+      password: "${LOKI_PASSWORD?}"
+    encoding:
+      codec: json
+    labels:
+      job: vector
+      instance: "${HOSTNAME?}"
+    inputs:
+      - traefik_parser
+      - syslog
+
+  prometheus:
+    type: prometheus_remote_write
+    endpoint: "${PROMETHEUS_ENDPOINT?}"
+    auth:
+      strategy: basic
+      user: "${PROMETHEUS_USER?}"
+      password: "${PROMETHEUS_PASSWORD?}"
+    inputs:
+      - host_metrics
