@@ -62,6 +62,13 @@ transforms:
     source: |-
       . |= parse_syslog!(.message)
 
+  metrics_tagger:
+    type: remap
+    inputs:
+      - "*_metrics"
+    source: |-
+      .tags.instance = "${HOSTNAME?}"
+
 sinks:
 
   # console:
@@ -95,4 +102,4 @@ sinks:
       user: "${PROMETHEUS_USER?}"
       password: "${PROMETHEUS_PASSWORD?}"
     inputs:
-      - host_metrics
+      - metrics_tagger
