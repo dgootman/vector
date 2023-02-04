@@ -33,5 +33,14 @@ services:
       - SYSFS_ROOT=/hostfs/sys
     command: [ "--config-yaml", "/etc/vector/vector.yaml" ]
 
+  docker-exporter:
+    image: ghcr.io/dgootman/docker-exporter
+    container_name: docker-exporter
+    restart: unless-stopped
+    ports:
+      - 9091:8080
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
 volumes:
   geoip:

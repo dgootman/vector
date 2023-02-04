@@ -37,6 +37,12 @@ sources:
         includes:
           - /dev/*
 
+  prometheus_scrape_metrics:
+    type: prometheus_scrape
+    endpoints:
+      - http://localhost:9091/metrics
+
+
 transforms:
 
   traefik_parser:
