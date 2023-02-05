@@ -80,6 +80,13 @@ transforms:
     source: |-
       .tags.instance = "${HOSTNAME?}"
 
+  metrics_filter:
+    type: filter
+    inputs:
+      - metrics_tagger
+    condition: >-
+      !starts_with!(.name, "namedprocess_") || includes(["namedprocess_namegroup_cpu_seconds_total", "namedprocess_namegroup_memory_bytes"], .name)
+
 sinks:
 
   # console:
@@ -113,4 +120,4 @@ sinks:
       user: "${PROMETHEUS_USER?}"
       password: "${PROMETHEUS_PASSWORD?}"
     inputs:
-      - metrics_tagger
+      - metrics_filter
