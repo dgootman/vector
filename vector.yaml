@@ -43,6 +43,7 @@ sources:
   prometheus_scrape_metrics:
     type: prometheus_scrape
     endpoints:
+      - http://localhost:8080/metrics # traefik
       - http://localhost:9091/metrics # docker-exporter
       - http://localhost:9256/metrics # process-exporter
 
