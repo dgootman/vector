@@ -36,6 +36,9 @@ sources:
       devices:
         includes:
           - /dev/*
+      mountpoints:
+        includes:
+          - /hostfs*
 
   prometheus_scrape_metrics:
     type: prometheus_scrape
