@@ -40,7 +40,8 @@ sources:
   prometheus_scrape_metrics:
     type: prometheus_scrape
     endpoints:
-      - http://localhost:9091/metrics
+      - http://localhost:9091/metrics # docker-exporter
+      - http://localhost:9256/metrics # process-exporter
 
 
 transforms:

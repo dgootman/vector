@@ -33,6 +33,17 @@ services:
       - SYSFS_ROOT=/hostfs/sys
     command: [ "--config-yaml", "/etc/vector/vector.yaml" ]
 
+  process-exporter:
+    image: ncabatoff/process-exporter
+    container_name: process-exporter
+    restart: unless-stopped
+    ports:
+      - 9256:9256
+    volumes:
+      - /proc:/host/proc:ro
+      - ./process-exporter.yaml:/etc/process-exporter.yaml:ro
+    command: ["--procfs", "/host/proc", "-config.path", "/etc/process-exporter.yaml"]
+
   docker-exporter:
     image: ghcr.io/dgootman/docker-exporter
     container_name: docker-exporter
