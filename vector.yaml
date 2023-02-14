@@ -60,11 +60,13 @@ transforms:
       # Coerce parsed fields
       .timestamp = parse_timestamp(.timestamp, "%d/%b/%Y:%H:%M:%S %z") ?? now()
 
-      .geoip = get_enrichment_table_record!("geoip_table",
-        {
-          "ip": .source_addr
-        }
-      )
+      if !includes(["127.0.0.1", "::1"], .source_addr) {
+        .geoip = get_enrichment_table_record!("geoip_table",
+          {
+            "ip": .source_addr
+          }
+        )
+      }
 
   syslog:
     type: remap
