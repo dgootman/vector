@@ -110,6 +110,7 @@ sinks:
     labels:
       job: vector
       instance: "${HOSTNAME?}"
+      file: "{{.file}}"
     inputs:
       - traefik_parser
       - syslog
