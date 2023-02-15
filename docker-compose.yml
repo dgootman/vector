@@ -20,6 +20,7 @@ services:
     network_mode: host
     volumes:
       - ./vector.yaml:/etc/vector/vector.yaml:ro
+      - data:/var/lib/vector
       - geoip:/etc/vector/geoip:ro
       - /:/hostfs:ro
     environment:
@@ -55,3 +56,4 @@ services:
 
 volumes:
   geoip:
+  data:
