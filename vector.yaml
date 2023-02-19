@@ -7,10 +7,8 @@ sources:
 
   traefik:
     type: file
-    ignore_older_secs: 600
     include:
-      - /hostfs/var/log/traefik/access.log
-    read_from: end
+      - /hostfs/var/log/traefik/access.jsonl
 
   logs:
     type: file
@@ -55,15 +53,14 @@ transforms:
     inputs:
       - traefik
     source: |-
-      . |= parse_regex!(.message, r'^(?P<source_addr>\S*) (?P<host>\S*) (?P<user>\S*) \[(?P<timestamp>[^\]]*)\] "(?P<method>\S+)(?: +(?P<path>[^"]*?)(?: +\S*)?)?" (?P<code>\S*) (?P<size>\S*)(?: "(?P<referer>[^"]*)" "(?P<agent>[^"]*)") (?P<count>\S*) "(?P<router>[^"]*)" "(?P<server>[^"]*)" (?P<duration>\d*)ms$')
+      . |= object!(parse_json!(string!(.message)))
 
-      # Coerce parsed fields
-      .timestamp = parse_timestamp(.timestamp, "%d/%b/%Y:%H:%M:%S %z") ?? now()
+      .timestamp = parse_timestamp!(.StartUTC, "%+")
 
-      if !includes(["127.0.0.1", "::1"], .source_addr) {
-        .geoip = get_enrichment_table_record!("geoip_table",
+      if !includes(["127.0.0.1", "::1"], .ClientHost) {
+        .GeoIP = get_enrichment_table_record!("geoip_table",
           {
-            "ip": .source_addr
+            "ip": .ClientHost
           }
         )
       }
