@@ -58,11 +58,11 @@ transforms:
       .timestamp = parse_timestamp!(.StartUTC, "%+")
 
       if !includes(["127.0.0.1", "::1"], .ClientHost) {
-        .GeoIP = get_enrichment_table_record!("geoip_table",
-          {
-            "ip": .ClientHost
-          }
-        )
+        .GeoIP, .GeoIPError = get_enrichment_table_record("geoip_table", {"ip": .ClientHost})
+
+        if .GeoIPError != null {
+          log(.GeoIPError, level: "error")
+        }
       }
 
   syslog:
