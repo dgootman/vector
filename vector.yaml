@@ -12,11 +12,9 @@ sources:
 
   logs:
     type: file
-    ignore_older_secs: 600
     include:
       - /hostfs/var/log/**/auth*.log
       - /hostfs/var/log/**/sys*.log
-    read_from: end
 
   host_metrics:
     type: host_metrics
@@ -71,6 +69,41 @@ transforms:
       - logs
     source: |-
       . |= parse_syslog!(.message)
+
+      # Try to parse username from the log
+      # Populate the User object following the Elastic Common Schema specification
+      # https://www.elastic.co/guide/en/ecs/current/ecs-user.html
+      .user = parse_regex(.message, r'\buser (?P<name>\w+)') ?? {}
+
+      # Try to parse an ip address from the log
+      # Populate the Source object following the Elastic Common Schema specification
+      # https://www.elastic.co/guide/en/ecs/current/ecs-source.html
+      .source = parse_regex(.message, r'\b(?P<ip>(?:[0-9]{1,3}\.){3}[0-9]{1,3})\b') ?? {}
+
+      if .source.ip != null {
+        .source.address = .source.ip
+
+        if !includes(["127.0.0.1", "::1"], .source.ip) {
+          # Use the GeoIP database to identify the IP's location
+          # Populate the Geo object following the Elastic Common Schema specification
+          # https://www.elastic.co/guide/en/ecs/current/ecs-geo.html
+          .source.geo, .source.geo_error = get_enrichment_table_record("geoip_table", {"ip": .source.ip})
+
+          if .source.geo_error != null {
+            log(.source.geo_error, level: "error")
+          } else {
+            # Remap fields to conform to ECS specification
+            .source.geo.country_iso_code = del(.source.geo.country_code)
+            .source.geo.region_iso_code = del(.source.geo.region_code)
+            .source.geo.location = {
+              "lon": del(.source.geo.latitude),
+              "lat": del(.source.geo.longitude),
+            }
+          }
+        }
+      }
+
+      . = compact(.)
 
   metrics_tagger:
     type: remap
