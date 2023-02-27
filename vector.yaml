@@ -51,17 +51,73 @@ transforms:
     inputs:
       - traefik
     source: |-
-      . |= object!(parse_json!(string!(.message)))
+      traefik = object!(parse_json!(string!(.message)))
 
-      .timestamp = parse_timestamp!(.StartUTC, "%+")
+      .timestamp = parse_timestamp!(traefik.StartUTC, "%+")
+      .level = traefik.level
 
-      if !includes(["127.0.0.1", "::1"], .ClientHost) {
-        .GeoIP, .GeoIPError = get_enrichment_table_record("geoip_table", {"ip": .ClientHost})
+      status_code = int!(traefik.DownstreamStatus)
 
-        if .GeoIPError != null {
-          log(.GeoIPError, level: "error")
+      .event.kind = "event"
+      .event.category = ["network", "web"]
+      .event.kind = ["access"]
+      if 200 <= status_code && status_code < 400 {
+        .event.outcome = "success"
+      } else {
+        .event.outcome = "failure"
+      }
+      .event.duration = traefik.Duration
+
+      .log.file.path = .file
+      .log.level = traefik.level
+
+      .http.request.body.bytes = traefik.RequestContentSize
+      .http.request.method = traefik.RequestMethod
+      .http.response.body.bytes = traefik.DownstreamContentSize
+      .http.response.status_code = status_code
+      .http.version = traefik.RequestProtocol
+
+      .url.domain = traefik.RequestHost
+      .url.path = traefik.RequestPath
+      .url.scheme = traefik.RequestScheme
+      if traefik.RequestPort != null && traefik.RequestPort != "-" {
+        .url.port = to_int!(traefik.RequestPort)
+      }
+
+      user_name = traefik.ClientUsername
+      if user_name != null && user_name != "-" {
+        .user.name = user_name
+      }
+
+      .user_agent.original = traefik."request_User-Agent"
+
+      .source.address = traefik.ClientAddr
+      .source.ip = traefik.ClientHost
+      .source.port = traefik.ClientPort
+
+      if .source.ip != null {
+        if !includes(["127.0.0.1", "::1"], .source.ip) {
+          # Use the GeoIP database to identify the IP's location
+          # Populate the Geo object following the Elastic Common Schema specification
+          # https://www.elastic.co/guide/en/ecs/current/ecs-geo.html
+          .source.geo, .source.geo_error = get_enrichment_table_record("geoip_table", {"ip": .source.ip})
+
+          if .source.geo_error != null {
+            log(.source.geo_error, level: "error")
+          } else {
+            # Remap fields to conform to ECS specification
+            .source.geo.country_iso_code = del(.source.geo.country_code)
+            .source.geo.region_iso_code = del(.source.geo.region_code)
+            .source.geo.location.lon = del(.source.geo.longitude)
+            .source.geo.location.lat = del(.source.geo.latitude)
+          }
         }
       }
+
+      .tls.cipher = traefik.TLSCipher
+      .tls.version = traefik.TLSVersion
+
+      .traefik.service = traefik.RouterName
 
   syslog:
     type: remap
@@ -95,10 +151,8 @@ transforms:
             # Remap fields to conform to ECS specification
             .source.geo.country_iso_code = del(.source.geo.country_code)
             .source.geo.region_iso_code = del(.source.geo.region_code)
-            .source.geo.location = {
-              "lon": del(.source.geo.latitude),
-              "lat": del(.source.geo.longitude),
-            }
+            .source.geo.location.lon = del(.source.geo.longitude)
+            .source.geo.location.lat = del(.source.geo.latitude)
           }
         }
       }
