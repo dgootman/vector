@@ -183,6 +183,7 @@ sinks:
   #   encoding:
   #     codec: json
 
+  # Documentation: https://vector.dev/docs/reference/configuration/sinks/loki/
   loki:
     type: loki
     endpoint: "${LOKI_ENDPOINT?}"
@@ -201,6 +202,7 @@ sinks:
       - traefik_parser
       - syslog
 
+  # Documentation: https://vector.dev/docs/reference/configuration/sinks/prometheus_remote_write/
   prometheus:
     type: prometheus_remote_write
     endpoint: "${PROMETHEUS_ENDPOINT?}"
