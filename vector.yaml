@@ -192,6 +192,7 @@ sinks:
       password: "${LOKI_PASSWORD?}"
     encoding:
       codec: json
+    out_of_order_action: accept
     labels:
       job: vector
       instance: "${HOSTNAME?}"
