@@ -1,3 +1,6 @@
+api:
+  enabled: true
+
 enrichment_tables:
   geoip_table:
     type: geoip
