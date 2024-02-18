@@ -38,6 +38,7 @@ sources:
       filesystems:
         excludes:
           - squashfs                  # squashfs is read-only
+    scrape_interval_secs: 60
 
   prometheus_scrape_metrics:
     type: prometheus_scrape
@@ -45,6 +46,7 @@ sources:
       - http://localhost:8080/metrics # traefik
       - http://localhost:9156/metrics # docker-exporter
       - http://localhost:9256/metrics # process-exporter
+    scrape_interval_secs: 60
     scrape_timeout_secs: 10
 
 
