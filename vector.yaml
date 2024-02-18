@@ -35,6 +35,9 @@ sources:
       mountpoints:
         includes:
           - /hostfs*
+      filesystems:
+        excludes:
+          - squashfs                  # squashfs is read-only
 
   prometheus_scrape_metrics:
     type: prometheus_scrape
