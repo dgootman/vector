@@ -172,7 +172,9 @@ transforms:
     inputs:
       - metrics_tagger
     condition: >-
-      !starts_with!(.name, "namedprocess_") || includes(["namedprocess_namegroup_cpu_seconds_total", "namedprocess_namegroup_memory_bytes"], .name)
+      !starts_with!(.name, "namedprocess_") ||
+        .name == "namedprocess_namegroup_cpu_seconds_total" ||
+        (.name == "namedprocess_namegroup_memory_bytes" && includes(["virtual", "resident"], .tags.memtype))
 
 sinks:
 
