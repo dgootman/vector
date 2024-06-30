@@ -96,6 +96,8 @@ transforms:
       user_name = traefik.ClientUsername
       if user_name != null && user_name != "-" {
         .user.name = user_name
+      } else if traefik."request_X-Forwarded-User" != null {
+        .user.name = traefik."request_X-Forwarded-User"
       }
 
       .user_agent.original = traefik."request_User-Agent"
