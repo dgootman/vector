@@ -6,6 +6,11 @@ enrichment_tables:
     type: geoip
     path: /etc/vector/geoip/GeoLite2-City.mmdb
 
+secret:
+  secrets:
+    type: file
+    path: /run/secrets/.vector.secrets.json
+
 sources:
 
   traefik:
@@ -176,7 +181,7 @@ transforms:
       - "*_metrics"
     source: |-
       .tags.job = "vector"
-      .tags.instance = "${HOSTNAME?}"
+      .tags.instance = "SECRET[secrets.HOSTNAME]"
 
   metrics_filter:
     type: filter
@@ -199,18 +204,18 @@ sinks:
   # Documentation: https://vector.dev/docs/reference/configuration/sinks/loki/
   loki:
     type: loki
-    endpoint: "${LOKI_ENDPOINT?}"
+    endpoint: "SECRET[secrets.LOKI_ENDPOINT]"
     auth:
       strategy: basic
-      user: "${LOKI_USER?}"
-      password: "${LOKI_PASSWORD?}"
+      user: "SECRET[secrets.LOKI_USER]"
+      password: "SECRET[secrets.LOKI_PASSWORD]"
     encoding:
       codec: json
     out_of_order_action: accept
     labels:
       job: vector
-      instance: "${HOSTNAME?}"
-      file: "{{.file}}"
+      instance: "SECRET[secrets.HOSTNAME]"
+      file: "file://{{.file}}"
     inputs:
       - traefik_parser
       - syslog
@@ -218,10 +223,10 @@ sinks:
   # Documentation: https://vector.dev/docs/reference/configuration/sinks/prometheus_remote_write/
   prometheus:
     type: prometheus_remote_write
-    endpoint: "${PROMETHEUS_ENDPOINT?}"
+    endpoint: "SECRET[secrets.PROMETHEUS_ENDPOINT]"
     auth:
       strategy: basic
-      user: "${PROMETHEUS_USER?}"
-      password: "${PROMETHEUS_PASSWORD?}"
+      user: "SECRET[secrets.PROMETHEUS_USER]"
+      password: "SECRET[secrets.PROMETHEUS_PASSWORD]"
     inputs:
       - metrics_filter

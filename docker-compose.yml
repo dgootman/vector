@@ -24,14 +24,10 @@ services:
       - geoip:/etc/vector/geoip:ro
       - /:/hostfs:ro
     environment:
-      - LOKI_ENDPOINT
-      - LOKI_USER
-      - LOKI_PASSWORD
-      - PROMETHEUS_ENDPOINT
-      - PROMETHEUS_USER
-      - PROMETHEUS_PASSWORD
       - PROCFS_ROOT=/hostfs/proc
       - SYSFS_ROOT=/hostfs/sys
+    secrets:
+      - .vector.secrets.json
     command: [ "--config-yaml", "/etc/vector/vector.yaml" ]
 
   process-exporter:
@@ -53,6 +49,10 @@ services:
       - 9156:8080
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+
+secrets:
+   .vector.secrets.json:
+     file: .vector.secrets.json
 
 volumes:
   geoip:

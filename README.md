@@ -18,18 +18,30 @@ One of the killer features this stack supports is the ability to geo-tag IPs fou
 
 2. Clone this repo: `https://github.com/dgootman/vector.git`
 
-3. `cp .env.example .env` 
+3. Copy the example configuration files:
 
-4. Replace the environment variables with your own. 
+   ```sh
+   cp .env.example .env
+   cp .vector.secrets.json.example .vector.secrets.json
+   ```
 
-5. `docker compose up`
+4. Add your GeoIP Update account ID and license key to `.env`.
+
+5. Update `.vector.secrets.json` with your Vector instance name and Grafana credentials:
+
+   - `HOSTNAME`: the name used to identify this Vector instance in metrics and logs.
+   - `LOKI_ENDPOINT`, `LOKI_USER`, and `LOKI_PASSWORD`: the endpoint and basic authentication credentials for Loki.
+   - `PROMETHEUS_ENDPOINT`, `PROMETHEUS_USER`, and `PROMETHEUS_PASSWORD`: the remote-write endpoint and basic authentication credentials for Prometheus.
+
+6. `docker compose up`
 
 ## Additional information
 
 **Loki and Prometheus**
 
-While you can host your own Loki and Prometheus instances, Grafana Cloud has a fairly generous free account that have host Loki and Prometheus endpoints. 
- - Once you sign up for a free account, the Get Started Guide will present you a nice dashboard, where you can 'scale and centralize existing data' > `Prometheus`, which should bring you to a URL `https://{your-team-url}.grafana.net/connections/connect-data/hmInstancePromId` which will allow you to generate API tokens, and provide you with the endpoints you need in the `.env` file.
+While you can host your own Loki and Prometheus instances, Grafana Cloud has a fairly generous free account that provides hosted Loki and Prometheus endpoints.
+
+- Once you sign up for a free account, the Get Started Guide will present you a dashboard where you can select 'scale and centralize existing data' > `Prometheus`. This should bring you to a URL such as `https://{your-team-url}.grafana.net/connections/connect-data/hmInstancePromId`, where you can generate API tokens and find the endpoint and user values to add to `.vector.secrets.json`.
 
 **`syslog` differences**
 
